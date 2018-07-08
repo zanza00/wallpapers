@@ -1,0 +1,24 @@
+{
+  "name": "current-wallpapers-reader-osx",
+  "version": "0.0.1",
+  "description": "a small utility script to show and open current wallpapers on macosx",
+  "main": "out/index.js",
+  "scripts": {
+    "clean": "rm -rf build && mkdir build",
+    "build": "yarn clean && tsc --project tsconfig.json",
+    "start": "yarn build --project tsconfig-dev.json && concurrently \"tsc --project tsconfig-dev.json -w\" \"nodemon build\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Simone Picciani",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^10.5.2",
+    "concurrently": "^3.6.0",
+    "nodemon": "^1.17.5",
+    "prettier": "^1.13.7",
+    "typescript": "^2.9.2"
+  },
+  "dependencies": {
+    "fp-ts": "^1.7.0"
+  }
+}
