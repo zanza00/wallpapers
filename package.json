@@ -6,19 +6,22 @@
   "scripts": {
     "clean": "rm -rf build && mkdir build",
     "build": "yarn clean && tsc --project tsconfig.json",
+    "go": "yarn build && node build/index.js",
     "start": "yarn build --project tsconfig-dev.json && concurrently \"tsc --project tsconfig-dev.json -w\" \"nodemon build\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Simone Picciani",
   "license": "ISC",
   "devDependencies": {
+    "@types/inquirer": "^0.0.43",
     "@types/node": "^10.5.2",
     "concurrently": "^3.6.0",
     "nodemon": "^1.17.5",
-    "prettier": "^1.13.7",
+    "prettier": "^1.14.3",
     "typescript": "^2.9.2"
   },
   "dependencies": {
-    "fp-ts": "^1.7.0"
+    "fp-ts": "^1.7.0",
+    "inquirer": "^6.2.0"
   }
 }

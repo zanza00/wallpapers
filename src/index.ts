@@ -1,9 +1,11 @@
 import { TaskEither, taskify } from 'fp-ts/lib/TaskEither';
 import { exec } from 'child_process';
+import * as inquirer from 'inquirer';
 
-const command =
+const getWallpapers =
   "sqlite3 '/Users/simonepicciani/Library/Application Support/Dock/desktoppicture.db' 'select value from data;'";
-
+const openWallpaper = (wp: string) =>
+  `open "/Users/simonepicciani/Dropbox (Personal)/IFTTT/reddit/wallpapers/${wp}"`;
 export interface ExecResult {
   stdout: Buffer | string;
   stderr: Buffer | string;
@@ -25,7 +27,6 @@ function program(command: string): TaskEither<Error, string[]> {
     } else {
       res = stdout;
     }
-
     return res
       .split('\n')
       .filter(
@@ -35,12 +36,18 @@ function program(command: string): TaskEither<Error, string[]> {
 }
 
 function main(): void {
-  program(command)
-    .map(x => {
-      console.log('printing current wallpapers')
-      x.forEach(item => {
-        console.log(item);
-      });
+  program(getWallpapers)
+    .map(wallpapers => {
+      inquirer
+        .prompt({
+          type: 'list',
+          choices: wallpapers,
+          message: 'ciao',
+          name: 'wallpaper',
+        })
+        .then((answer: any) => {
+          exec(openWallpaper(answer.wallpaper));
+        });
     })
     .mapLeft(err => {
       console.error('ERROR!!', JSON.stringify(err));
