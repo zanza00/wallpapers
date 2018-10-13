@@ -1,6 +1,7 @@
 import { TaskEither, taskify, tryCatch } from 'fp-ts/lib/TaskEither';
 import { exec } from 'child_process';
 import * as inquirer from 'inquirer';
+import * as sqlite from 'sqlite3';
 
 const getWallpapersCommand =
   "sqlite3 '/Users/simonepicciani/Library/Application Support/Dock/desktoppicture.db' 'select value from data;'";
@@ -12,6 +13,36 @@ export interface ExecResult {
   stdout: Buffer | string;
   stderr: Buffer | string;
 }
+
+function sqliteConnect() {
+  const db = new sqlite.Database(
+    '/Users/simonepicciani/Library/Application Support/Dock/desktoppicture.db',
+    err => {
+      if (err) {
+        return console.error(err.message);
+      }
+      console.log('Connected to the in-memory SQlite database.');
+    },
+  );
+  const sql = `select value from data;`;
+
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      throw err;
+    }
+    rows.map(({ value }) => value).forEach(row => {
+      console.log(row);
+    });
+  });
+
+  db.close(err => {
+    if (err) {
+      return console.error(err.message);
+    }
+    console.log('Close the database connection.');
+  });
+}
+
 const execTask = taskify(
   (
     command: string,
@@ -70,4 +101,7 @@ function main(): void {
     .run();
 }
 
-main();
+if (false) {
+  main();
+}
+sqliteConnect();
