@@ -1,11 +1,13 @@
-import { TaskEither, taskify } from 'fp-ts/lib/TaskEither';
+import { TaskEither, taskify, tryCatch } from 'fp-ts/lib/TaskEither';
 import { exec } from 'child_process';
 import * as inquirer from 'inquirer';
 
-const getWallpapers =
+const getWallpapersCommand =
   "sqlite3 '/Users/simonepicciani/Library/Application Support/Dock/desktoppicture.db' 'select value from data;'";
-const openWallpaper = (wp: string) =>
+
+const openWallpaperCommand = (wp: string) =>
   `open "/Users/simonepicciani/Dropbox (Personal)/IFTTT/reddit/wallpapers/${wp}"`;
+
 export interface ExecResult {
   stdout: Buffer | string;
   stderr: Buffer | string;
@@ -19,7 +21,7 @@ const execTask = taskify(
   },
 );
 
-function program(command: string): TaskEither<Error, string[]> {
+function execTE(command: string): TaskEither<Error, string> {
   return execTask(command).map(({ stdout }) => {
     let res;
     if (Buffer.isBuffer(stdout)) {
@@ -27,31 +29,44 @@ function program(command: string): TaskEither<Error, string[]> {
     } else {
       res = stdout;
     }
-    return res
-      .split('\n')
-      .filter(
-        x => x.length > 1 && x !== '1' && x !== '900.0' && !x.startsWith('~'),
-      );
+    return res;
   });
 }
 
+const spawnInquirerPrompt = (
+  choices: string[],
+): TaskEither<Error, { wallpaper: string }> =>
+  tryCatch(
+    () =>
+      inquirer.prompt({
+        type: 'list',
+        choices,
+        message: 'Chose wallpaper',
+        name: 'wallpaper',
+        pageSize: 15,
+      }),
+    err => ({ name: 'Inquirer Error', message: `${err}` }),
+  );
+
+function splitAndFilter(stdout: string): string[] {
+  return stdout
+    .split('\n')
+    .filter(
+      x => x.length > 1 && x !== '1' && x !== '900.0' && !x.startsWith('~'),
+    );
+}
+
 function main(): void {
-  program(getWallpapers)
-    .map(wallpapers => {
-      inquirer
-        .prompt({
-          type: 'list',
-          choices: wallpapers,
-          message: 'ciao',
-          name: 'wallpaper',
-        })
-        .then((answer: any) => {
-          exec(openWallpaper(answer.wallpaper));
-        });
-    })
-    .mapLeft(err => {
-      console.error('ERROR!!', JSON.stringify(err));
-    })
+  execTE(getWallpapersCommand)
+    .map(splitAndFilter)
+    .chain(spawnInquirerPrompt)
+    .chain(({ wallpaper }) =>
+      execTE(openWallpaperCommand(wallpaper)).map(() => wallpaper),
+    )
+    .fold(
+      err => console.error('ERROR!!', JSON.stringify(err)),
+      res => console.log(`Successfuly opened ${res}`),
+    )
     .run();
 }
 
