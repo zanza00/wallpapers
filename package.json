@@ -6,15 +6,16 @@
   "scripts": {
     "clean": "rm -rf build && mkdir build",
     "build": "yarn clean && tsc --project tsconfig.json",
-    "go": "yarn build && node build/index.js",
+    "build:dev": "yarn clean && tsc --project tsconfig-dev.json",
+    "run:prod": "yarn build && node build/index.js",
     "start": "yarn build --project tsconfig-dev.json && concurrently \"tsc --project tsconfig-dev.json -w\" \"nodemon build\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Simone Picciani",
   "license": "ISC",
   "devDependencies": {
-    "@types/inquirer": "^0.0.43",
     "@types/node": "^10.5.2",
+    "@types/sqlite3": "^3.1.3",
     "concurrently": "^3.6.0",
     "nodemon": "^1.17.5",
     "prettier": "^1.14.3",
@@ -22,6 +23,6 @@
   },
   "dependencies": {
     "fp-ts": "^1.7.0",
-    "inquirer": "^6.2.0"
+    "sqlite3": "^4.0.2"
   }
 }

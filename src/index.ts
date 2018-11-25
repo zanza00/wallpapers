@@ -1,72 +1,72 @@
-import { TaskEither, taskify, tryCatch } from 'fp-ts/lib/TaskEither';
-import { exec } from 'child_process';
-import * as inquirer from 'inquirer';
+import { TaskEither, tryCatch } from 'fp-ts/lib/TaskEither';
+import * as sqlite from 'sqlite3';
+import {
+  DB,
+  DBAndWallpapersMixed,
+  WallpapersMixed,
+  WallpapersList,
+} from './model';
 
-const getWallpapersCommand =
-  "sqlite3 '/Users/simonepicciani/Library/Application Support/Dock/desktoppicture.db' 'select value from data;'";
+// const getWallpaperCommand = (path: string, wp: string) => `${path}/${wp}`;
 
-const openWallpaperCommand = (wp: string) =>
-  `open "/Users/simonepicciani/Dropbox (Personal)/IFTTT/reddit/wallpapers/${wp}"`;
+// const openWallpaperCommand = (wp: string) =>
+//   `open "/Users/simonepicciani/Dropbox (Personal)/IFTTT/reddit/wallpapers/${wp}"`;
 
-export interface ExecResult {
-  stdout: Buffer | string;
-  stderr: Buffer | string;
-}
-const execTask = taskify(
-  (
-    command: string,
-    cb: (e: Error | null | undefined, r?: ExecResult) => void,
-  ) => {
-    exec(command, (err, stdout, stderr) => cb(err, { stdout, stderr }));
-  },
-);
-
-function execTE(command: string): TaskEither<Error, string> {
-  return execTask(command).map(({ stdout }) => {
-    let res;
-    if (Buffer.isBuffer(stdout)) {
-      res = stdout.toString('utf8');
-    } else {
-      res = stdout;
-    }
-    return res;
+function openConnection(path: string): TaskEither<string, DB> {
+  const prom: Promise<sqlite.Database> = new Promise((resolve, reject) => {
+    const db = new sqlite.Database(path, err => {
+      if (err) {
+        return reject(err.message);
+      }
+    });
+    return resolve(db);
   });
+  return tryCatch(() => prom, reason => reason).mapLeft(err => err.toString());
 }
 
-const spawnInquirerPrompt = (
-  choices: string[],
-): TaskEither<Error, { wallpaper: string }> =>
-  tryCatch(
-    () =>
-      inquirer.prompt({
-        type: 'list',
-        choices,
-        message: 'Chose wallpaper',
-        name: 'wallpaper',
-        pageSize: 15,
-      }),
-    err => ({ name: 'Inquirer Error', message: `${err}` }),
-  );
+function getWallpapers(
+  db: sqlite.Database,
+): TaskEither<string, DBAndWallpapersMixed> {
+  const sqlCommand = `select value from data;`;
+  const prom: Promise<DBAndWallpapersMixed> = new Promise((resolve, reject) => {
+    db.all(sqlCommand, [], (err, rows) => {
+      if (err) {
+        return reject(err.message);
+      }
+      return resolve({ wallpapers: rows.map(({ value }) => value), db });
+    });
+  });
+  return tryCatch(() => prom, reason => reason).mapLeft(err => err.toString());
+}
 
-function splitAndFilter(stdout: string): string[] {
+function closeConnection({ db, wallpapers }: DBAndWallpapersMixed) {
+  const prom: Promise<WallpapersMixed> = new Promise((resolve, reject) => {
+    db.close(err => {
+      if (err) {
+        return reject(err.message);
+      }
+      return resolve(wallpapers);
+    });
+  });
+  return tryCatch(() => prom, reason => reason).mapLeft(err => err.toString());
+}
+
+function filterWallpapers(stdout: WallpapersMixed): WallpapersList {
   return stdout
-    .split('\n')
+    .filter((e: any): e is string => typeof e === 'string')
     .filter(
       x => x.length > 1 && x !== '1' && x !== '900.0' && !x.startsWith('~'),
     );
 }
 
 function main(): void {
-  execTE(getWallpapersCommand)
-    .map(splitAndFilter)
-    .chain(spawnInquirerPrompt)
-    .chain(({ wallpaper }) =>
-      execTE(openWallpaperCommand(wallpaper)).map(() => wallpaper),
-    )
-    .fold(
-      err => console.error('ERROR!!', JSON.stringify(err)),
-      res => console.log(`Successfuly opened ${res}`),
-    )
+  const dbPath =
+    '/Users/simonepicciani/Library/Application Support/Dock/desktoppicture.db';
+  openConnection(dbPath)
+    .chain(getWallpapers)
+    .chain(closeConnection)
+    .map(filterWallpapers)
+    .fold(l => console.error(l), a => console.log(a))
     .run();
 }
 
