@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Wallpapers</title>
+  </head>
+  <body>
+    <div id="result"></div>
+    <script>
+      const resDiv = document.querySelector('#result');
+      const image = (path, img) =>
+        `<img src="file://${encodeURI(
+          `${path}/${img}`,
+        )}" height="300"  width="500" />`;
+      fetch('http://localhost:8080/wallpapers')
+        .then(function(response) {
+          return response.json();
+        })
+        .then(function(myJson) {
+          const path = myJson.path;
+          resDiv.innerHTML = myJson.wallpapers
+            .map(img => image(path, img))
+            .join();
+        });
+    </script>
+  </body>
+</html>

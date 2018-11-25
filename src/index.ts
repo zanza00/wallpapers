@@ -34,7 +34,7 @@ function wallpapersHandler(
       },
       wallpapers => {
         res.send({
-          path: config.dbPath,
+          path: config.path,
           wallpapers,
         });
         next();
@@ -48,6 +48,14 @@ function main(): void {
 
   server.get('/status', statusHandler);
   server.get('/wallpapers', wallpapersHandler);
+
+  server.get(
+    '/',
+    restify.plugins.serveStatic({
+      directory: './build/web',
+      default: 'index.html',
+    }),
+  );
 
   server.listen(8080, function() {
     console.log('%s listening at %s', server.name, server.url);
