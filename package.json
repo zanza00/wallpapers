@@ -7,7 +7,7 @@
     "clean": "rm -rf build && mkdir build",
     "build": "yarn clean && tsc --project tsconfig.json",
     "build:dev": "yarn clean && tsc --project tsconfig-dev.json",
-    "go": "yarn build:dev && node build/index.js",
+    "run:prod": "yarn build && node build/index.js",
     "start": "yarn build --project tsconfig-dev.json && concurrently \"tsc --project tsconfig-dev.json -w\" \"nodemon build\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
