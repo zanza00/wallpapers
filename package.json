@@ -5,7 +5,8 @@
   "main": "out/index.js",
   "scripts": {
     "clean": "rm -rf build && mkdir build",
-    "build": "yarn clean && cp -R src/web build/web && tsc --project tsconfig.json",
+    "link-assets": "mkdir build/assets && ln -s \"/Users/simonepicciani/Dropbox (Personal)/IFTTT/reddit/wallpapers/\" build/assets/wallpapers",
+    "build": "yarn clean && cp -R src/web build/web && yarn link-assets && tsc --project tsconfig.json",
     "build:dev": "yarn clean && tsc --project tsconfig-dev.json",
     "run:prod": "yarn build && node build/index.js",
     "start": "yarn build --project tsconfig-dev.json && concurrently \"tsc --project tsconfig-dev.json -w\" \"nodemon build\"",

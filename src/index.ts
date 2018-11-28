@@ -6,7 +6,7 @@ import { filterWallpapers } from './wallpapers';
 const config = {
   dbPath:
     '/Users/simonepicciani/Library/Application Support/Dock/desktoppicture.db',
-  path: '/Users/simonepicciani/Dropbox (Personal)/IFTTT/reddit/wallpapers',
+  path: 'assets/wallpapers',
 };
 
 function statusHandler(
@@ -48,6 +48,13 @@ function main(): void {
 
   server.get('/status', statusHandler);
   server.get('/wallpapers', wallpapersHandler);
+
+  server.get(
+    '/assets/wallpapers/*',
+    restify.plugins.serveStatic({
+      directory: './build/',
+    }),
+  );
 
   server.get(
     '/',

@@ -11,7 +11,7 @@
     <script>
       const resDiv = document.querySelector('#result');
       const image = (path, img) =>
-        `<img src="file://${encodeURI(
+        `<img src="/${encodeURI(
           `${path}/${img}`,
         )}" height="300"  width="500" />`;
       fetch('http://localhost:8080/wallpapers')
